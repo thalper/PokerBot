@@ -1,8 +1,12 @@
 import time
 import random
 
+hand1 = [0, 5, 22, 26, 51, 34, 50]  # 1 pair
+hand2 = [2, 15, 12, 25, 38, 0, 5]  # full house
+hand3 = [16, 18, 17, 9, 20, 35, 19]  # straight flush
+hand4 = [0, 13, 26, 5, 18, 9, 22]  # broken full house
 
-
+print(hand1.best)
 
 class CreateDeck:
     def shuffle():
@@ -29,41 +33,41 @@ class CreateDeck:
 
 class HandRanks:
     def best(hand):
-        boolSF, valSF = SFlush(hand)
-        bool4, val4, kicker4 = Quads(hand)
-        boolB, valB, kickerB = FullHouse(hand)
-        boolF, valF = Flush(hand)
-        boolS, valS = Straight(hand)
-        bool3, val3, kicker3 = Trips(hand)
-        bool2, val2, kicker2 = TwoPair(hand)
-        boolP, valP, kickerP = Pair(hand)
+        boolSF, valSF = HandRanks.SFlush(hand)
+        bool4, val4, kicker4 = HandRanks.Quads(hand)
+        boolB, valB, kickerB = HandRanks.FullHouse(hand)
+        boolF, valF = HandRanks.Flush(hand)
+        boolS, valS = HandRanks.Straight(hand)
+        bool3, val3, kicker3 = HandRanks.Trips(hand)
+        bool2, val2, kicker2 = HandRanks.TwoPair(hand)
+        boolP, valP, kickerP = HandRanks.Pair(hand)
         kicker = None
         if boolSF:
             rank = 8
             val = valSF
-        else if bool4:
+        elif bool4:
             rank = 7
             val = val4
             kicker = kicker4
-        else if boolB:
+        elif boolB:
             rank = 6
             val = valB
             kicker = kickerB
-        else if boolF:
+        elif boolF:
             rank = 5
             val = valF
-        else if boolS:
+        elif boolS:
             rank = 4
             val = valS
-        else if bool3:
+        elif bool3:
             rank = 3
             val = val3
             kicker = kicker3
-        else if bool2:
+        elif bool2:
             rank = 2
             val = val2
             kicker = kicker2
-        else if boolP:
+        elif boolP:
             rank = 1
             val = valP
             kicker = kickerP
@@ -86,10 +90,11 @@ class HandRanks:
         return rank, val, kicker
         
     def SFlush(hand):
-        Sbool, val = Straight(hand)
-        if !Sbool:
+        Sbool, val = HandRanks.Straight(hand)
+        if not Sbool:
             return False, None
         cardList = [val, val+13, val+26, val+39]
+        newList = []
         for top in cardList:
             if top in hand:
                 newList.append(top)
@@ -100,8 +105,8 @@ class HandRanks:
         return True, val  
     
     def Quads(hand):
-        TBool, val = Trips(hand)
-        if !Trips:
+        Tbool, val, kicker3 = HandRanks.Trips(hand)
+        if not Tbool:
             return False, None, None
         if val in hand:
             if val+13 in hand:
@@ -116,15 +121,19 @@ class HandRanks:
         return False, None, None
     
     def FullHouse(hand):
-        TBool, val = Trips(hand)
-        if !Tbool:
+        Tbool, val, useless = HandRanks.Trips(hand)
+        if not Tbool:
             return False, None
-        TwoBool, val2, kicker2 = Twopair(hand)
-        if !TwoBool:
+        TwoBool, val2, kicker2 = HandRanks.TwoPair(hand)
+        if not TwoBool:
             return False, None
+        if val == kicker2:
+            return True, kicker2, val2
         if val == val2:
             return True, val, kicker2
-        return kicker2, val
+        return True, val, val2
+        
+        
         """
         countVal2 = 0
         if val2 in hand:
@@ -162,25 +171,25 @@ class HandRanks:
             if card1suit == index:
                 if max(boardCount) < 5:
                     value = higher % 13
-                else if min(board) < higher:
+                elif min(board) < higher:
                     value = higher % 13
                 else:
                     value = min(board) % 13
             else:
                 value = min(board) % 13
 
-        else if card1suit == index:
+        elif card1suit == index:
             if max(boardCount) < 5:
                 value = hand[0] % 13
-            else if min(board) < hand[0]:
+            elif min(board) < hand[0]:
                 value = hand[0] % 13
             else:
                 value = min(board) % 13
             
-        else if card2suit == index:
+        elif card2suit == index:
             if max(boardCount) < 5:
                 value = hand[1] % 13
-            else if min(board) < hand[1]:
+            elif min(board) < hand[1]:
                 value = hand[1] % 13
             else:
                 value = min(board) % 13 
@@ -206,7 +215,7 @@ class HandRanks:
                 return True, high
             copyHand.remove(high)
             
-        if 0 in copy2 and 1 in copy2 and 2 in copy2 and 3 in copy2 and 4 in copy2::
+        if 0 in copy2 and 1 in copy2 and 2 in copy2 and 3 in copy2 and 4 in copy2:
             return True, 5
 
         return False, None
@@ -250,6 +259,26 @@ class HandRanks:
             pairs.sort(reverse=True)
             return True, pairs[0], pairs[1]
 
+    def Pair(hand):
+        copyHand = hand
+        for i in range(len(copyHand)):
+            copyHand[i] = (copyHand[i] + 1) % 13
+        new = []
+        high = 0
+        for card in copyHand:
+            if card in new:
+                if (hand[0] % 13) == card:
+                    if (hand[1] % 13) == card:
+                        kicker = None
+                    else:
+                        kicker = hand[1] % 13
+                elif (hand[1] % 13) == card:
+                    kicker = hand[0] % 13
+                else:
+                    kicker = max([(hand[0] % 13), (hand[1] % 13)])
+                return True, card, kicker
+            copyHand.remove(card)
+        return False, None, None
             
         
 
