@@ -87,28 +87,56 @@ class HandRanks:
             kicker = kickerP
         else:
             rank = 0
-            val = 0 # high card
-            for x in self.hand:
-                num = x % 13
-                if num > val:
-                    val = num
-                    copyx = x
-            copy = self.hand.copy()
-            copy.remove(copyx)
+            val = 0
+            kicker = None
+            copy = []
+            for x in range(len(self.hand)):
+                copy.append(self.hand[x] % 13)
+            count = 1
+            while count <= 5:
+                high = max(copy)
+                if copy[0] == high:
+                    val = high
+                    copy.remove(val)
+                    break
+                elif copy[1] == high:
+                    val = high
+                    copy.remove(val)
+                    break
+                else:
+                    count += 1
+                if count == 6:
+                    val = None
+                copy.remove(high)
+            if count < 5:
+                while count <= 4:
+                    high = max(copy)
+                    if copy[0] == high:
+                        kicker = high
+                        break
+                    count += 1
+                    copy.remove(high)
 
-            kicker = 0 # second high card
-            for x in copy:
-                num = x % 13
-                if num > kicker:
-                    kicker = num
 
         return rank, val, kicker
 
         
-    def SFlush(self):
+    def SFlush(self): 
         Sbool, val = self.Straight()
         if not Sbool:
             return False, None
+        test = self.SFlushHelper(val)
+        if test == False:
+            val = val - 1
+            test = self.SFlushHelper(val)
+        if test == False:
+            val = val - 1
+            test = self.SFlushHelper(val)
+        if test == False:
+            return False, None
+        return True, val  
+    
+    def SFlushHelper(self, val):
         cardList = [val, val+13, val+26, val+39]
         newList = []
         for top in cardList:
@@ -117,8 +145,8 @@ class HandRanks:
         for card in newList:
             for i in range(5):
                 if (card-i) not in self.hand:
-                    return False, None
-        return True, val  
+                    return False
+        return True
 
     
     def Quads(self):
@@ -234,11 +262,11 @@ class HandRanks:
                 if card == val:
                     count += 1
             if count > 2:
-                copyHand.remove(copyHand[0])
+                copyHand = [i for i in copyHand if i != val]
                 kicker = max(copyHand + [kicker])
                 return True, val, kicker
             kicker = max([kicker] + [copyHand[0]])
-            copyHand.remove(copyHand[0])
+            copyHand = [i for i in copyHand if i != val]
         
         return False, None, None
 
@@ -255,7 +283,7 @@ class HandRanks:
                     count += 1
             if count > 1:
                 pairs.append(val)
-            copyHand = [i for i in copyHand if i != val] # replace all .remove() with this
+            copyHand = [i for i in copyHand if i != val] 
         if len(pairs) > 1:
             pairs.sort(reverse=True)
             return True, pairs[0], pairs[1]
@@ -285,10 +313,9 @@ class HandRanks:
         
 
 ## look through all rankings and make sure kicker is high card FROM HAND if its a single card
-# fix full house if 3 pair and trips on the lowest pair 2,2,2,5,5,9,9 (example that breaks it)
 
 
-players = 2
+players = 6
 game = Dealer(players)
 hands = game.deal()
 board = hands[1]
@@ -303,7 +330,9 @@ for x in range(len(hands)):
     hands[x] = hands[x][0]
 
 
-print(hands)
+#print(hands)
+
+
 ranks = []
 for x in hands:
     hand = HandRanks(x)
@@ -311,4 +340,14 @@ for x in hands:
 
 print(ranks)
 
-#print(hand4.best())
+copyHands = hands.copy()
+for copyHand in copyHands:
+    for i in range(len(copyHand)):
+        copyHand[i] = copyHand[i] % 13
+print(copyHands)
+
+
+
+#testHand = HandRanks([0,1,15,3,4,18,19])
+
+#print(testHand.best())
