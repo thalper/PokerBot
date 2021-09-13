@@ -29,18 +29,107 @@ class Dealer:
             deck.append(card)
         return deck
 
-    def deal(self):
+    def deal(self, dealerSeat):
         hands = []
         for i in range(self.players):
             playerHand = []
             playerHand.append(self.deck[i])
             playerHand.append(self.deck[i+self.players])
             hands.append(playerHand)
-        for i in range(self.players):
-            self.deck.pop(0)
-            self.deck.pop(0)
-        board = [self.deck[0], self.deck[1], self.deck[2], self.deck[4], self.deck[6]]
+        for i in range(dealerSeat + 1):
+            hands.insert(0, hands.pop(self.players - 1))
+        board = [self.deck[self.players*2 + 0], 
+                 self.deck[self.players*2 + 1],
+                 self.deck[self.players*2 + 2],
+                 self.deck[self.players*2 + 4],
+                 self.deck[self.players*2 + 6]]
         return [hands, board]
+
+
+class playHand:
+    def __init__(self, hands, players, dealerSeat, chipCounts, bigBlind):
+        self.hands = hands
+        self.chips = chipCounts
+        self.players = []
+        for i in range(players):
+            self.players.append(i)
+        self.dealerSeat = dealerSeat
+        self.pot = 0
+        self.bets = [0] * players
+        self.blinds(bigBlind)
+
+    def blinds(self, bigBlind):
+        self.bets[self.dealerSeat + 1] = 0.5*bigBlind # small blind
+        self.chips[self.dealerSeat + 1] -= 0.5*bigBlind
+
+        self.bets[self.dealerSeat + 2] = bigBlind # big blind
+        self.chips[self.dealerSeat + 2] -= bigBlind
+
+        self.pot = 1.5 * bigBlind
+        return
+
+
+    def possibleActions(self, seat):
+    # (0, 1, 2, 3) -> (fold, check, call, raise)
+        if max(self.bets) == self.bets[seat]: # big blind pre flop, or no bet made yet post flop
+            return [1, 3]
+        if self.chips[seat] + self.bets[seat] <= max(self.bets): # player would be all in if they call
+            return [0, 2]
+        return [0, 2, 3] 
+    
+    def chooseAction(self, toAct, actions, hand):
+        scores = []
+        for action in actions:
+
+
+
+            score = 0 # put score function here
+
+
+
+            scores.append(score)
+        maxScore = max(scores)
+        for i in range(len(actions)):
+            if maxScore == scores[len(actions) - 1 - i]: # using len(actions) - 1- i instead of i to choose the more aggressive play style if there is a tie
+                action = actions[len(actions) - 1 - i]
+        if action == 0: 
+            self.players[toAct] = 0
+            return
+        if action == 1:
+            return
+        if action == 2:
+            committed = self.bets[toAct]
+            callAmmount = max(self.bets) - committed
+            self.pot += callAmmount
+            self.bets[toAct] = max(self.bets)
+            self.chips[toAct] -= callAmmount
+            return
+        if action == 3:
+            committed = self.bets[toAct]
+
+
+
+            raiseAmmount = self.getRaise(committed)
+
+
+            self.pot += raiseAmmount
+            self.bets[toAct] += raiseAmmount
+            self.chips[toAct] -= raiseAmmount
+            return
+
+
+
+    def preFlop(self):
+        raiser = None
+        toAct = (self.dealerSeat + 2) % len(self.players)
+        while len(self.players) > 1 and (raiser != toAct):
+            actions = self.possibleActions(toAct)
+            self.chooseAction(toAct, actions, self.hand[:2])
+            toAct += 1
+            
+
+
+
 
 class HandRanks:
     def __init__(self, hand):
@@ -88,7 +177,6 @@ class HandRanks:
         else:
             rank = 0
             val = 0
-            kicker = None
             copy = []
             for x in range(len(self.hand)):
                 copy.append(self.hand[x] % 13)
@@ -129,24 +217,23 @@ class HandRanks:
         if test == False:
             val = val - 1
             test = self.SFlushHelper(val)
-        if test == False:
-            val = val - 1
-            test = self.SFlushHelper(val)
-        if test == False:
-            return False, None
+            if test == False:
+                val = val - 1
+                test = self.SFlushHelper(val)
+                if test == False:
+                    return False, None
         return True, val  
     
     def SFlushHelper(self, val):
         cardList = [val, val+13, val+26, val+39]
-        newList = []
-        for top in cardList:
-            if top in self.hand:
-                newList.append(top)
-        for card in newList:
-            for i in range(5):
-                if (card-i) not in self.hand:
-                    return False
-        return True
+        if val == 3: # ace low (card + 9 is the ace)
+            lowOffset = -9
+        else:
+            lowOffset = 4
+        for card in cardList:
+            if card in self.hand and (card-1) in self.hand and (card-2) in self.hand and (card-3) in self.hand and (card-lowOffset) in self.hand:
+                return True
+        return False
 
     
     def Quads(self):
@@ -317,20 +404,12 @@ class HandRanks:
 
 players = 6
 game = Dealer(players)
-hands = game.deal()
-board = hands[1]
+dealt = game.deal(0)
+board = dealt[1]
+hands = []
 for i in range(players):
-    hand = [hands[0][0] + board]
+    hand = dealt[0][i] + board
     hands.append(hand)
-    hands[0].pop(0)
-hands.pop(0)
-hands.pop(0)
-
-for x in range(len(hands)):
-    hands[x] = hands[x][0]
-
-
-#print(hands)
 
 
 ranks = []
@@ -347,7 +426,23 @@ for copyHand in copyHands:
 print(copyHands)
 
 
-
+"""
+if ranks[0][0] > ranks[1][0]:
+    print(':)')
+elif ranks[1][0] > ranks[0][0]:
+    print(':(')
+else:
+    if ranks[0][1] > ranks[1][1]:
+        print(':)')
+    elif ranks[1][1] > ranks[0][1]:
+        print(':(')
+    else:
+        if ranks[0][2] > ranks[1][2]:
+            print(':)')
+        elif ranks[1][2] > ranks[0][2]:
+            print(':(')
+        else:
+            print(":|")
 #testHand = HandRanks([0,1,15,3,4,18,19])
-
+"""
 #print(testHand.best())

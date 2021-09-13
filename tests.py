@@ -104,9 +104,8 @@ def FullHouse(hand):
     return True, val, val2
     
 
-
 def Flush(hand):
-    board = hand[2:]
+    board = hand[2:].copy()
     suitCount = [0,0,0,0]
     boardCount = [0,0,0,0]
     for card in hand:
@@ -172,7 +171,7 @@ def Straight(hand):
         copyHand.remove(high)
         
     if 0 in copy2 and 1 in copy2 and 2 in copy2 and 3 in copy2 and 4 in copy2:
-        return True, 5
+        return True, 3
 
     return False, None
 
